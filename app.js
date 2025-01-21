@@ -13,14 +13,24 @@ const colombiaCRoutes = require('./routes/colombiaC');
 const createbpRoutes = require('./routes/createbp');
 const aprobarbpRoutes = require('./routes/createbp');
 const getbpRoutes = require('./routes/createbp');
+
 const app = express();
 
 // Middlewares
 app.use(bodyParser.json());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Configurar CORS
+const allowedOrigins = ['http://localhost:3002', 'https://tu-dominio-en-produccion.com'];
 app.use(cors({
-  origin: 'http://localhost:3002', // Permitir solo este dominio
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('No permitido por CORS'));
+    }
+  },
 }));
 
 // Rutas
@@ -36,6 +46,17 @@ app.use('/api/city', colombiaCRoutes);
 app.use('/api/createbp', createbpRoutes);
 app.use('/api/aprobarbp',aprobarbpRoutes );
 app.use('/api/getlessons', getbpRoutes);
+
+// Manejo de rutas no encontradas
+app.use((req, res, next) => {
+  res.status(404).json({ error: 'Ruta no encontrada' });
+});
+
+// Manejo de errores
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Ocurrió un error en el servidor' });
+});
 
 // Puerto
 const PORT = 3000;
